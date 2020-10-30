@@ -34,6 +34,16 @@ object Spike extends App {
   type MyF[A] = Either[Log, A]
   val x: MyF[(Log, Int)] = foo[MyF].run
 
-  println(x)
   println(x.map(_._1).merge.show)
+  /*
+  Start Process
+ Doing A
+  Calc c: 3
+  Calc d: 4
+
+  Doing B
+   Calc e: 5
+   Calc f: 6
+
+   */
 }

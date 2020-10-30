@@ -13,7 +13,7 @@ object LogTree {
   private final case class Parent(label: String, children: Vector[Log]) extends Log
 
   object Log {
-    implicit val logSemi: Monoid[Log] = new Monoid[Log] {
+    implicit val logMonoid: Monoid[Log] = new Monoid[Log] {
       override val empty: Log = LogMessage(Vector.empty)
 
       override def combine(x: Log, y: Log): Log =

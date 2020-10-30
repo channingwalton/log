@@ -2,7 +2,7 @@ package io.channing
 
 import cats.data.WriterT
 import cats.implicits._
-import cats.{ Applicative, Monad, Monoid, Show }
+import cats.{ Applicative, MonadError, Monoid, Show }
 
 object LogTree {
 
@@ -40,20 +40,18 @@ object LogTree {
     }
   }
 
-  def log[F[_]: Applicative, A](
-      f: F[A],
-      msg: String
-  ): WriterT[F, Log, A] = WriterT.liftF[F, Log, A](f).tell(LogMessage(Vector(msg)))
+  def log[F[_]: Applicative, A](f: F[A], msg: String): WriterT[F, Log, A] = WriterT.liftF[F, Log, A](f).tell(LogMessage(Vector(msg)))
 
   def log[F[_]: Applicative](msg: String): WriterT[F, Log, Unit] = WriterT.tell[F, Log](LogMessage(Vector(msg)))
 
   def parent[F[_]: Applicative](label: String): WriterT[F, Log, Unit] = WriterT.tell[F, Log](Parent(label, Vector.empty))
 
   implicit class ParentOps(s: String) {
-    def ~<[F[_]: Monad, A](a: WriterT[F, Log, A]): WriterT[F, Log, A] = parent[F](s) >> a
+    def ~<[F[_], A](a: WriterT[F, Log, A])(implicit me: MonadError[F, Log]): WriterT[F, Log, A] = parent[F](s) >> a
   }
 
-  implicit class LogOps[F[_]: Applicative, A](f: F[A]) {
-    def ~>(msg: String): WriterT[F, Log, A] = log(f, msg)
+  implicit class LogOps[F[_], A](f: F[A])(implicit me: MonadError[F, Log]) {
+    def ~>(msg: String): WriterT[F, Log, A]       = log(f, msg)
+    def ~~>(msg: A => String): WriterT[F, Log, A] = WriterT.liftF[F, Log, A](f).flatMap(a => log(f, msg(a)))
   }
 }

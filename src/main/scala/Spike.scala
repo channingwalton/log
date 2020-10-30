@@ -1,13 +1,13 @@
 package io.channing
 
 import cats.implicits._
-import cats.Monad
+import cats.MonadError
 import cats.data.WriterT
 import LogTree._
 
 object Spike extends App {
 
-  def foo[F[_]: Monad]: WriterT[F, Log, Int] =
+  def foo[F[_]](implicit me: MonadError[F, Log]): WriterT[F, Log, Int] =
     "Start Process" ~< {
       for {
         a <- doA[F]
@@ -15,21 +15,25 @@ object Spike extends App {
       } yield a + b
     }
 
-  def doA[F[_]: Monad]: WriterT[F, Log, Int] =
-    for {
-      c <- 3.pure[F] ~> "Calc c"
-      d <- 4.pure[F] ~> "Calc d"
-    } yield c + d
+  def doA[F[_]](implicit me: MonadError[F, Log]): WriterT[F, Log, Int] =
+    "Doing A" ~< {
+      for {
+        c <- 3.pure[F] ~~> { "Calc c: " + _ }
+        d <- 4.pure[F] ~~> { "Calc d: " + _ }
+      } yield c + d
+    }
 
-  def doB[F[_]: Monad]: WriterT[F, Log, Int] =
+  def doB[F[_]](implicit me: MonadError[F, Log]): WriterT[F, Log, Int] =
     "Doing B" ~< {
       for {
-        e <- 5.pure[F] ~> "Calc e"
-        f <- 6.pure[F] ~> "Calc f"
+        e <- 5.pure[F] ~~> { "Calc e: " + _ }
+        f <- 6.pure[F] ~~> { "Calc f: " + _ }
       } yield e + f
     }
 
-  val (l, v) = foo[cats.Id].run
-  println(v)
-  println(l.show)
+  type MyF[A] = Either[Log, A]
+  val x: MyF[(Log, Int)] = foo[MyF].run
+
+  println(x)
+  println(x.map(_._1).merge.show)
 }

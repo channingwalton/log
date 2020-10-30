@@ -2,7 +2,7 @@ package io.channing
 
 import cats.data.WriterT
 import cats.implicits._
-import cats.{Applicative, Monad, Monoid, Show}
+import cats.{ Applicative, Monad, Monoid, Show }
 
 object LogTree {
 
@@ -10,8 +10,7 @@ object LogTree {
 
   private final case class LogMessage(msg: Vector[String]) extends Log
 
-  private final case class Parent(label: String, children: Vector[Log])
-      extends Log
+  private final case class Parent(label: String, children: Vector[Log]) extends Log
 
   object Log {
     implicit val logSemi: Monoid[Log] = new Monoid[Log] {
@@ -28,8 +27,7 @@ object LogTree {
     }
 
     implicit val show: Show[Log] = new Show[Log] {
-      override def show(t: Log): String =
-        doShow(t, 0)
+      override def show(t: Log): String = doShow(t, 0)
 
       private def doShow(t: Log, depth: Int): String =
         t match {
@@ -45,54 +43,17 @@ object LogTree {
   def log[F[_]: Applicative, A](
       f: F[A],
       msg: String
-  ): WriterT[F, Log, A] =
-    WriterT.liftF[F, Log, A](f).tell(LogMessage(Vector(msg)))
+  ): WriterT[F, Log, A] = WriterT.liftF[F, Log, A](f).tell(LogMessage(Vector(msg)))
 
-  def log[F[_]: Applicative](msg: String): WriterT[F, Log, Unit] =
-    WriterT.tell[F, Log](LogMessage(Vector(msg)))
+  def log[F[_]: Applicative](msg: String): WriterT[F, Log, Unit] = WriterT.tell[F, Log](LogMessage(Vector(msg)))
 
-  def parent[F[_]: Applicative](label: String): WriterT[F, Log, Unit] =
-    WriterT.tell[F, Log](Parent(label, Vector.empty))
+  def parent[F[_]: Applicative](label: String): WriterT[F, Log, Unit] = WriterT.tell[F, Log](Parent(label, Vector.empty))
 
   implicit class ParentOps(s: String) {
-    def ~<[F[_]: Monad, A](a: WriterT[F, Log, A]): WriterT[F, Log, A] =
-      parent[F](s) >> a
+    def ~<[F[_]: Monad, A](a: WriterT[F, Log, A]): WriterT[F, Log, A] = parent[F](s) >> a
   }
 
   implicit class LogOps[F[_]: Applicative, A](f: F[A]) {
-    def ~>(msg: String): WriterT[F, Log, A] =
-      log(f, msg)
+    def ~>(msg: String): WriterT[F, Log, A] = log(f, msg)
   }
-}
-
-object Spike extends App {
-  import LogTree._
-
-  def foo[F[_]: Monad]: WriterT[F, Log, Int] = {
-    "Start Process" ~< {
-      for {
-        a <- doA[F]
-        b <- doB[F]
-      } yield a + b
-    }
-  }
-
-  def doA[F[_]: Monad]: WriterT[F, Log, Int] = {
-    for {
-      c <- 3.pure[F] ~> "Calc c"
-      d <- 4.pure[F] ~> "Calc d"
-    } yield c + d
-  }
-
-  def doB[F[_]: Monad]: WriterT[F, Log, Int] =
-    "Doing B" ~< {
-      for {
-        e <- 5.pure[F] ~> "Calc e"
-        f <- 6.pure[F] ~> "Calc f"
-      } yield e + f
-    }
-
-  val (l, v) = (foo[cats.Id].run)
-  println(v)
-  println(l.show)
 }

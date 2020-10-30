@@ -37,13 +37,13 @@ object Spike extends App {
   println(x.map(_._1).merge.show)
   /*
   Start Process
- Doing A
-  Calc c: 3
-  Calc d: 4
+   Doing A
+    Calc c: 3
+    Calc d: 4
 
-  Doing B
-   Calc e: 5
-   Calc f: 6
+    Doing B
+     Calc e: 5
+     Calc f: 6
 
    */
 }

@@ -35,7 +35,7 @@ object LogTree {
           case Parent(label, children) =>
             " " * depth + label + children
               .map(c => "\n" + doShow(c, depth + 1))
-              .mkString("\n")
+              .mkString
         }
     }
   }

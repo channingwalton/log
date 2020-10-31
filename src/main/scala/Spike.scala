@@ -12,6 +12,7 @@ object Spike extends App {
       for {
         a <- doA[F]
         b <- doB[F]
+        _ <- ().pure[F] ~> "oops"
       } yield a + b
     }
 
